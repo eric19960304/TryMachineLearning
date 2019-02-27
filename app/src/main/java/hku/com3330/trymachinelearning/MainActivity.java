@@ -1,6 +1,9 @@
 package hku.com3330.trymachinelearning;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,23 +15,18 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private Button submitButton;
     private Button clearButton;
     private RequestQueue requestQueue;
+    private ConstraintLayout drawingContainer;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -61,13 +60,14 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        ConstraintLayout drawingView = findViewById(R.id.drawingView);
+        drawingContainer = findViewById(R.id.drawingView);
         submitButton = findViewById(R.id.submitButton);
         clearButton = findViewById(R.id.clearButton);
 
         // add the drawing canvas to view
         myDrawView = new MyDrawView(this);
-        drawingView.addView(myDrawView);
+        drawingContainer.addView(myDrawView);
+        drawingContainer.setDrawingCacheEnabled(true);
 
         // add button listeners
         clearButton.setOnClickListener(new View.OnClickListener(){
@@ -80,9 +80,16 @@ public class MainActivity extends AppCompatActivity {
         submitButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                Bitmap bitmap = myDrawView.getBitmap();
-                Log.d("myTest", bitmap.toString());
-                (new UploadDrawingToServer()).execute(bitmap);
+
+                Bitmap bitmap = drawingContainer.getDrawingCache();
+                Bitmap resizedBitmap = Bitmap.createScaledBitmap(
+                        bitmap,
+                        240,
+                        240,
+                        false
+                );
+                myDrawView.clear();
+                (new UploadDrawingToServer()).execute(resizedBitmap);
             }
         });
 
@@ -93,34 +100,58 @@ public class MainActivity extends AppCompatActivity {
 
     private class UploadDrawingToServer extends AsyncTask<Bitmap, Void, Void> {
 
-        protected Void doInBackground(Bitmap... bitmap){
+        protected Void doInBackground(Bitmap... bitmaps){
 
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            bitmap[0].compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
-            byte[] byteArray = byteArrayOutputStream .toByteArray();
-            String base64Image = Base64.encodeToString(byteArray, Base64.DEFAULT);
-            Log.d("myTest", Integer.toString(base64Image.length()));
+            bitmaps[0].compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+            String base64Image = Base64.encodeToString(byteArrayOutputStream.toByteArray(), Base64.NO_WRAP);
 
-            // make a json string
-            JSONObject data = new JSONObject();
-
-            try{
-                data.put("img", base64Image);
-            }catch(Exception e){
-                Log.d("myTest", "something wrong when making json string");
-            }
-
+            Map<String, String> data = new HashMap();
+            data.put("img", base64Image);
+            JSONObject postData = new JSONObject(data);
 
             // send POST request to server
-            String urlString = "http://localhost/edge2Shoe"; // URL to call
+            String url = "http://192.168.0.100/edge2Shoe"; // URL to call
+
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                    (
+                        Request.Method.POST,
+                        url,
+                        postData,
+                        new Response.Listener<JSONObject>() {
+
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try{
+                                    String base64Image = response.getString("result");
+                                    byte[] decodedString = Base64.decode(base64Image, Base64.NO_WRAP);
+                                    final Bitmap resultBitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+                                    drawingContainer.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            drawingContainer.setBackground(new BitmapDrawable(getApplicationContext().getResources(), resultBitmap));
+                                        }
+                                    });
 
 
+                                }catch (Exception e){
+                                    Log.d("myTest", e.toString());
+                                }
+
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.d("myTest", "error when making POST request"+error.toString());
+                            }
+                        }
+                    );
+
+            requestQueue.add(jsonObjectRequest);
             return null;
-        }
-
-        protected void onPostExecute(Void v){
-
-        }
+        } // end of doInBackground
 
     } // end of UploadDrawingToServer
 }

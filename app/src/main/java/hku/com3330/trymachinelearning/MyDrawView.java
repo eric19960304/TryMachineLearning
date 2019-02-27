@@ -101,7 +101,4 @@ public class MyDrawView extends View {
         System.gc();
     }
 
-    public Bitmap getBitmap(){
-        return mBitmap;
-    }
 }
