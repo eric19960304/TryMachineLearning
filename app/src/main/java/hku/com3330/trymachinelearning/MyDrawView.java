@@ -101,4 +101,13 @@ public class MyDrawView extends View {
         System.gc();
     }
 
+    public void setCanvas(Bitmap newBitmap){
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setFilterBitmap(true);
+        paint.setDither(true);
+
+        mCanvas.drawBitmap(newBitmap, 0, 0, paint);
+    }
+
 }

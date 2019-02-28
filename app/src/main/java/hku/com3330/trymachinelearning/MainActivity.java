@@ -2,6 +2,7 @@ package hku.com3330.trymachinelearning;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 myDrawView.clear();
+                drawingContainer.setBackgroundColor(Color.WHITE);
             }
         });
 
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
                         false
                 );
                 myDrawView.clear();
+                drawingContainer.setBackgroundColor(Color.WHITE);
                 (new UploadDrawingToServer()).execute(resizedBitmap);
             }
         });
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
             JSONObject postData = new JSONObject(data);
 
             // send POST request to server
-            String url = "http://192.168.0.100/edge2Shoe"; // URL to call
+            String url = "http://10.21.4.106:8890/edge2Shoe"; // URL to call
 
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                     (
@@ -130,6 +134,8 @@ public class MainActivity extends AppCompatActivity {
                                     drawingContainer.post(new Runnable() {
                                         @Override
                                         public void run() {
+                                            Log.d("myTest", resultBitmap.toString());
+                                            // myDrawView.setCanvas(resultBitmap);
                                             drawingContainer.setBackground(new BitmapDrawable(getApplicationContext().getResources(), resultBitmap));
                                         }
                                     });
@@ -148,6 +154,11 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     );
+
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(
+                    20000,
+                    DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                    DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
             requestQueue.add(jsonObjectRequest);
             return null;
