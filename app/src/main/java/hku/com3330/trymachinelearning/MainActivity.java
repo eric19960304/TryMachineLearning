@@ -91,8 +91,7 @@ public class MainActivity extends AppCompatActivity {
                         240,
                         false
                 );
-                myDrawView.clear();
-                drawingContainer.setBackgroundColor(Color.WHITE);
+
                 (new UploadDrawingToServer()).execute(resizedBitmap);
             }
         });
@@ -136,6 +135,8 @@ public class MainActivity extends AppCompatActivity {
                                         public void run() {
                                             Log.d("myTest", resultBitmap.toString());
                                             // myDrawView.setCanvas(resultBitmap);
+                                            myDrawView.clear();
+                                            drawingContainer.setBackgroundColor(Color.WHITE);
                                             drawingContainer.setBackground(new BitmapDrawable(getApplicationContext().getResources(), resultBitmap));
                                         }
                                     });
@@ -156,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                     );
 
             jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(
-                    20000,
+                    50000,
                     DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                     DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
