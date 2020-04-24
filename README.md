@@ -5,7 +5,7 @@ An Android App demonstrating edge2shoe in machine learning papers MUNIT: Multimo
 <img src="https://raw.githubusercontent.com/eric19960304/edge-to-shoe-android-app/master/img/1.jpg" width="270"> <img src="https://raw.githubusercontent.com/eric19960304/edge-to-shoe-android-app/master/img/2.jpg" width="270"> <img src="https://raw.githubusercontent.com/eric19960304/edge-to-shoe-android-app/master/img/3.jpg" width="270">
 
 
-Require back-end server that running the code in (my forked MUNIT repo)[https://github.com/eric19960304/MUNIT]
+Require back-end server that running the code in [my forked MUNIT repo](https://github.com/eric19960304/MUNIT)
 
 Steps:
 
